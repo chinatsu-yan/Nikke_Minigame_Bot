@@ -45,7 +45,7 @@ nikke-minigame-bot/
 `.\venv\Scripts\activate`
 
 ##### 3\. 安装所需依赖包 (推荐使用国内镜像加速)  
-`pip install -r requirements.txt -i [https://pypi.tuna.tsinghua.edu.cn/simple](https://pypi.tuna.tsinghua.edu.cn/simple)`
+`pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`
 
 ### **3\. 启动脚本**
 
