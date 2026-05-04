@@ -8,6 +8,14 @@ import ctypes
 import threading
 import time
 
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) 
+except Exception:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()  
+    except Exception:
+        pass
+
 class BaseBot:
     def __init__(self):
         self.target_window = ""
@@ -17,6 +25,9 @@ class BaseBot:
         self.threads = []
         self.ui_reset_callback = None
         self.log_callback = None
+        
+        self.REF_W = 2560
+        self.REF_H = 1440
 
     def get_hwnd(self, title_keyword):
         hwnd_list = []
@@ -28,48 +39,83 @@ class BaseBot:
         return hwnd_list[0] if hwnd_list else None
 
     def capture_bg(self, hwnd, crop_rect=None):
-        if not hwnd: return None
-        
-        if win32gui.IsIconic(hwnd):
+        if not hwnd or win32gui.IsIconic(hwnd): 
             return None
             
-        left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-        w, h = right - left, bottom - top
-        
-        if w <= 0 or h <= 0:
+        try:
+            left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+            w, h = right - left, bottom - top
+            if w <= 0 or h <= 0: 
+                return None
+
+            client_rect = win32gui.GetClientRect(hwnd)
+            client_w, client_h = client_rect[2], client_rect[3]
+            
+            point = win32gui.ClientToScreen(hwnd, (0, 0))
+            border_x = max(0, point[0] - left)
+            title_y = max(0, point[1] - top)
+
+            hwndDC = win32gui.GetWindowDC(hwnd)
+            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+
+            saveBitMap = win32ui.CreateBitmap()
+            saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+            saveDC.SelectObject(saveBitMap)
+
+            ctypes.windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 2)
+
+            bmpinfo = saveBitMap.GetInfo()
+            bmpstr = saveBitMap.GetBitmapBits(True)
+            img = np.frombuffer(bmpstr, dtype='uint8')
+            img.shape = (bmpinfo['bmHeight'], bmpinfo['bmWidth'], 4)
+
+            win32gui.DeleteObject(saveBitMap.GetHandle())
+            saveDC.DeleteDC()
+            mfcDC.DeleteDC()
+            win32gui.ReleaseDC(hwnd, hwndDC)
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+            img = img[title_y:title_y+client_h, border_x:border_x+client_w]
+
+            if crop_rect:
+                x, y, cw, ch = crop_rect
+                img = img[y:y+ch, x:x+cw]
+            return img
+        except Exception as e:
             return None
 
-        hwndDC = win32gui.GetWindowDC(hwnd)
-        mfcDC = win32ui.CreateDCFromHandle(hwndDC)
-        saveDC = mfcDC.CreateCompatibleDC()
+    def map_2560x1440(self, ref_x, ref_y, ref_w, ref_h, client_w, client_h):
+        if client_w <= 0 or client_h <= 0: return 0, 0, 1, 1
+        
+        target_ratio = self.REF_W / self.REF_H
+        current_ratio = client_w / client_h
 
-        saveBitMap = win32ui.CreateBitmap()
-        saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
-        saveDC.SelectObject(saveBitMap)
+        if current_ratio > target_ratio + 0.01:   
+            real_h = client_h
+            real_w = int(client_h * target_ratio)
+            offset_x = (client_w - real_w) // 2
+            offset_y = 0
+        elif current_ratio < target_ratio - 0.01: 
+            real_w = client_w
+            real_h = int(client_w / target_ratio)
+            offset_x = 0
+            offset_y = (client_h - real_h) // 2
+        else:                                     
+            real_w, real_h = client_w, client_h
+            offset_x, offset_y = 0, 0
 
-        ctypes.windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 2)
+        scale_x = real_w / self.REF_W
+        scale_y = real_h / self.REF_H
 
-        bmpinfo = saveBitMap.GetInfo()
-        bmpstr = saveBitMap.GetBitmapBits(True)
-
-        img = np.frombuffer(bmpstr, dtype='uint8')
-        img.shape = (bmpinfo['bmHeight'], bmpinfo['bmWidth'], 4)
-
-        win32gui.DeleteObject(saveBitMap.GetHandle())
-        saveDC.DeleteDC()
-        mfcDC.DeleteDC()
-        win32gui.ReleaseDC(hwnd, hwndDC)
-
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        if crop_rect:
-            x, y, cw, ch = crop_rect
-            img = img[y:y+ch, x:x+cw]
-        return img
+        x = offset_x + int(ref_x * scale_x)
+        y = offset_y + int(ref_y * scale_y)
+        w = max(1, int(ref_w * scale_x))
+        h = max(1, int(ref_h * scale_y))
+        
+        return x, y, w, h, scale_x
 
     def send_key_bg(self, hwnd, key_code):
-        """
-        发送纯净的带硬件扫描码的后台按键
-        """
         if not hwnd: return
         scan_code = win32api.MapVirtualKey(key_code, 0)
         lparam_down = 1 | (scan_code << 16)

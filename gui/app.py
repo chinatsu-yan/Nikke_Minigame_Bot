@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import win32gui
 from games.parkour import ParkourBot
+from games.whack_a_mole import WhackAMoleBot
 
 ctk.set_appearance_mode("Dark")  
 ctk.set_default_color_theme("blue")  
@@ -33,7 +34,7 @@ class App(ctk.CTk):
         ctk.CTkButton(self.main_frame, text="🔄 刷新", width=80, command=self.refresh_windows).grid(row=1, column=1, sticky="w", padx=10, pady=(0, 20))
 
         ctk.CTkLabel(self.main_frame, text="选择执行脚本:", font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, sticky="w", pady=(0, 5))
-        self.script_optionmenu = ctk.CTkOptionMenu(self.main_frame, values=["跑酷 (Parkour)"], width=300)
+        self.script_optionmenu = ctk.CTkOptionMenu(self.main_frame, values=["跑酷 (奔跑吧，索达！)", "打地鼠 (猛击吧，索达！)"], width=300)
         self.script_optionmenu.grid(row=3, column=0, sticky="w", pady=(0, 20))
 
         ctk.CTkLabel(self.main_frame, text="运行日志:", font=ctk.CTkFont(weight="bold")).grid(row=4, column=0, sticky="w", pady=(0, 5))
@@ -84,8 +85,10 @@ class App(ctk.CTk):
 
             self.log_message(f"初始化后台引擎... 目标窗口: {target_window}")
             
-            if script_type == "跑酷 (Parkour)":
+            if script_type == "跑酷 (奔跑吧，索达！)":
                 self.current_bot = ParkourBot()
+            elif script_type == "打地鼠 (猛击吧，索达！)":
+                self.current_bot = WhackAMoleBot()
                 
             self.current_bot.start_bot(
                 window_title=target_window, 
