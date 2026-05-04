@@ -36,15 +36,15 @@ nikke-minigame-bot/
 
 建议使用虚拟环境运行此项目，以保持系统环境纯净。
 
-# 克隆/下载项目到本地后，在项目根目录打开命令行
+#### 克隆/下载项目到本地后，在项目根目录打开命令行
 
-# 1\. 创建虚拟环境 (Windows)  
+##### 1\. 创建虚拟环境 (Windows)  
 `python \-m venv venv`
 
-# 2\. 激活虚拟环境  
+##### 2\. 激活虚拟环境  
 `.\\venv\\Scripts\\activate`
 
-# 3\. 安装所需依赖包 (推荐使用国内镜像加速)  
+##### 3\. 安装所需依赖包 (推荐使用国内镜像加速)  
 `pip install \-r requirements.txt \-i \[https://pypi.tuna.tsinghua.edu.cn/simple\](https://pypi.tuna.tsinghua.edu.cn/simple)`
 
 ### **3\. 启动脚本**
