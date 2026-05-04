@@ -39,13 +39,13 @@ nikke-minigame-bot/
 #### 克隆/下载项目到本地后，在项目根目录打开命令行
 
 ##### 1\. 创建虚拟环境 (Windows)  
-`python \-m venv venv`
+`python -m venv venv`
 
 ##### 2\. 激活虚拟环境  
-`.\\venv\\Scripts\\activate`
+`.\venv\Scripts\activate`
 
 ##### 3\. 安装所需依赖包 (推荐使用国内镜像加速)  
-`pip install \-r requirements.txt \-i \[https://pypi.tuna.tsinghua.edu.cn/simple\](https://pypi.tuna.tsinghua.edu.cn/simple)`
+`pip install -r requirements.txt -i [https://pypi.tuna.tsinghua.edu.cn/simple](https://pypi.tuna.tsinghua.edu.cn/simple)`
 
 ### **3\. 启动脚本**
 
